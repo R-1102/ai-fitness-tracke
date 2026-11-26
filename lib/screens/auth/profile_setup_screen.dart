@@ -50,7 +50,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           children: [
             stagger(0, Row(children: [
-              AppBackButton(tooltip: 'Cancel sign-up', icon: Icons.close_rounded, onPressed: authService.signOut),
+              AppBackButton(tooltip: 'Cancel sign-up', icon: Icons.close_rounded, onPressed: () => authService.signOut()),
               const SizedBox(width: 14),
               const Expanded(child: StepProgress(step: 2, total: 2)),
             ])),

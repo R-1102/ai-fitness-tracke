@@ -43,7 +43,7 @@ class _HomeShellState extends State<HomeShell> {
               duration: Motion.reduced(context) ? Duration.zero : const Duration(milliseconds: 220),
               child: page,
             ),
-            bottomNavigationBar: _NavBar(index: _index, onSelect: _goTo),
+            bottomNavigationBar: AppNavBar(index: _index, onSelect: _goTo),
           ),
         );
       },
@@ -51,8 +51,8 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-class _NavBar extends StatelessWidget {
-  const _NavBar({required this.index, required this.onSelect});
+class AppNavBar extends StatelessWidget {
+  const AppNavBar({super.key, required this.index, required this.onSelect});
   final int index;
   final ValueChanged<int> onSelect;
 
