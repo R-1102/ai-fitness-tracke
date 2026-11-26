@@ -168,20 +168,3 @@ flutter test
 | Shared report node — every user overwrote the same calories | Per-user session history with Firestore rules |
 | Single 4,400-line file, Windows-only paths | Layered architecture, unit tests, CI |
 
-## Roadmap
-- [ ] Arabic localisation (RTL)
-- [ ] More exercises (lunges, shoulder press, plank timer)
-- [ ] Sequence model (landmark windows) for more robust counting
-- [ ] Custom workout plans & reminders
-
-## Team & credits
-
-Original graduation project — *“A Live Capture Tracking Model for Fitness Workouts using Vision Framework”*,
-College of Computer Science and Engineering, **Taibah University** (2024), supervised by
-**Dr. Aeshah Alsughayyir**.
-
-Team: Anfal Alraddadi · Asma Alharbi · Reem Alruwaythi · Renad Alhazmi · Manar Alahmadi
-
-Mobile rebuild (v2): **<your-name>** — [LinkedIn](https://linkedin.com/in/<your-handle>)
-
-Font: [Plus Jakarta Sans](https://github.com/tokotype/PlusJakartaSans) (SIL Open Font License, see `assets/fonts/OFL.txt`).
