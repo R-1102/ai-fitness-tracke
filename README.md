@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/images/logo.png" height="120" alt="Fitness Tracker logo"/>
-
 # Fitness Tracker — AI Workout Coach
 
 **Counts your reps and checks your form in real time using your phone's camera.**
@@ -14,7 +12,7 @@
 
 </div>
 
-> Graduation project (Taibah University, 2024), rebuilt as a cross-platform mobile app.
+> Graduation project, rebuilt as a cross-platform mobile app.
 
 <!-- Add screenshots / a short GIF here — it's the first thing recruiters look at.
 <p align="center">
