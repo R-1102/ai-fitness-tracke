@@ -52,7 +52,7 @@ class CameraPoseSource {
         else
           const PosePoint(0, 0, 0),
     ];
-    return PoseFrame(points);
+    return PoseFrame(points, aspect: w / h);
   }
 
   InputImage? _toInputImage(CameraImage image, CameraController controller) {

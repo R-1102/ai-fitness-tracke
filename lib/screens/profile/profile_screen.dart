@@ -117,7 +117,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
           stagger(3, _Group(children: [
             _ActionRow(label: 'Edit profile', icon: Icons.chevron_right_rounded, onTap: openEdit),
-            _ActionRow(label: 'Log out', icon: Icons.logout_rounded, onTap: authService.signOut),
+            _ActionRow(label: 'Log out', icon: Icons.logout_rounded, onTap: () => authService.signOut()),
             _ActionRow(label: 'Delete account', color: AppColors.danger, onTap: () => _deleteAccount(context)),
           ])),
         ],

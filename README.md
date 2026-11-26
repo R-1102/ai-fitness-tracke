@@ -14,19 +14,43 @@
 
 > Graduation project, rebuilt as a cross-platform mobile app.
 
-<!-- Add screenshots / a short GIF here — it's the first thing recruiters look at.
+## Demo
+
 <p align="center">
-  <img src="docs/screenshots/home.png" width="220"/>
-  <img src="docs/screenshots/live.gif" width="220"/>
-  <img src="docs/screenshots/progress.png" width="220"/>
+  <img src="docs/gifs/app-tour.gif" width="280" alt="App tour: home, workouts, exercise detail, summary and progress with animations"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/gifs/welcome.gif" width="280" alt="Welcome screen with the animated AI tracking illustration"/>
 </p>
+
+<!-- Real camera demo (record on a phone, then: bash scripts/make_gif.sh video.MOV docs/gifs/live-workout.gif 3 8)
+<p align="center"><img src="docs/gifs/live-workout.gif" width="280" alt="Live rep counting"/></p>
 -->
+
+### Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/welcome.png" width="200" alt="Welcome"/><br/><sub>Welcome</sub></td>
+    <td align="center"><img src="docs/screenshots/setup.png" width="200" alt="Personalise your plan"/><br/><sub>Sign-up · level</sub></td>
+    <td align="center"><img src="docs/screenshots/home.png" width="200" alt="Home"/><br/><sub>Home</sub></td>
+    <td align="center"><img src="docs/screenshots/workouts.png" width="200" alt="Workouts"/><br/><sub>Workouts</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/detail.png" width="200" alt="Exercise detail"/><br/><sub>Exercise detail</sub></td>
+    <td align="center"><img src="docs/screenshots/summary.png" width="200" alt="Workout summary"/><br/><sub>Summary</sub></td>
+    <td align="center"><img src="docs/screenshots/progress.png" width="200" alt="Progress"/><br/><sub>Progress</sub></td>
+    <td align="center"><img src="docs/screenshots/profile.png" width="200" alt="Profile"/><br/><sub>Profile</sub></td>
+  </tr>
+</table>
+
+<sub>Screens rendered from the app code with sample data — regenerate any time with <code>bash scripts/generate_screenshots.sh</code>.</sub>
 
 ## Features
 
 - 🎥 **Live pose tracking** — on-device body tracking (33 landmarks) with a skeleton overlay.
 - 🔢 **Automatic rep counting** — custom-trained neural networks detect the up/down phase of each exercise.
-- ✅ **Form feedback** — green/red skeleton and coaching cues (“Keep your elbow close to your body”, “Knees caving in”).
+- ✅ **Form feedback** — blue/orange skeleton and coaching cues (“Keep your elbow close to your body”, “Knees caving in”).
+- 🛡️ **Exercise validation** — body-geometry checks confirm each rep really is the selected exercise, so burpees or bending over aren't counted as squats, and half reps are flagged.
 - 🏋️ **4 exercises** — push-ups, squats, hammer curls, barbell curls.
 - 📶 **3 levels** — Beginner (8 reps), Intermediate (12), Advanced (15) × 3 sets with automatic rest timer.
 - 📊 **Progress** — monthly activity heat-map, form accuracy trend, history, streaks, calorie estimate (MET-based).
@@ -44,8 +68,10 @@ flowchart LR
     B --> C[Normalise to 0..1<br/>relative to nose<br/>66 features]
     C --> D[Up/Down model<br/>66→128→64→32→16→2]
     C --> E[Form check<br/>angles · ratios · model]
+    B --> V[Exercise validation<br/>depth · torso · hands]
     D --> F[Rep counter<br/>state machine]
     E --> F
+    V --> F
     F --> G[UI: reps, sets,<br/>feedback, rest timer]
     F --> H[(Firestore<br/>session history)]
 ```
@@ -79,7 +105,9 @@ lib/
 └── widgets/       shared UI kit, animated pose illustrations, camera overlay
 ml/                original models + training code (Python)
 tools/             convert_models.py (Keras .h5 → JSON)
-test/              model + rep-counter unit tests
+test/              model, rep-counter and validation unit tests
+docs/              README screenshots and GIFs
+scripts/           platform setup, screenshot & GIF generators
 firestore.rules    database security rules
 ```
 
@@ -156,6 +184,7 @@ flutter test
 ```
 - `pose_classifier_test` – Dart network output equals the NumPy/Keras reference for all 5 models.
 - `workout_engine_test` – rep counting, wrong-form reps, countdown, rest, pause/resume, skip rest, per-set results, early finish, form analyzers.
+- `rep_validator_test` – burpees, planks and bending over are rejected for squats; half squats are flagged; push-up and curl checks.
 
 ## What changed from the original version (v1 → v2)
 

@@ -131,6 +131,7 @@ class _LiveWorkoutScreenState extends State<LiveWorkoutScreen> with WidgetsBindi
     if (coach != null && prev != null) {
       if (next.correctReps > prev.correctReps) coach.rep(next.reps == 0 ? next.targetReps : next.reps);
       if (next.wrongReps > prev.wrongReps) coach.cue(next.feedback ?? 'Check your form');
+      if (next.ignoredReps > prev.ignoredReps) coach.cue(next.feedback ?? 'That rep was not counted');
       if (prev.phase != next.phase) {
         switch (next.phase) {
           case WorkoutPhase.active:

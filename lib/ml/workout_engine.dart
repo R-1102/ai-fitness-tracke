@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'form_analyzers.dart';
 import 'pose_classifier.dart';
 import 'pose_frame.dart';
+import 'rep_validator.dart';
 
 enum WorkoutPhase { countdown, active, rest, completed }
 
@@ -29,6 +30,7 @@ class WorkoutState {
     required this.secondsLeft,
     required this.elapsed,
     this.isPaused = false,
+    this.ignoredReps = 0,
   });
 
   final WorkoutPhase phase;
@@ -57,6 +59,9 @@ class WorkoutState {
 
   final bool isPaused;
 
+  /// Movements that went down/up but weren't the selected exercise.
+  final int ignoredReps;
+
   int get currentSetNumber => math.min(setIndex + 1, totalSets);
 
   String get message => switch (phase) {
@@ -78,6 +83,8 @@ class WorkoutEngine {
     this.countdown = const Duration(seconds: 5),
     this.restDuration = const Duration(seconds: 15),
     this.threshold = 0.65,
+    this.validator,
+    this.minRepDuration = Duration.zero,
     DateTime Function()? clock,
   })  : _stage = initialStage,
         _clock = clock ?? DateTime.now;
@@ -88,6 +95,12 @@ class WorkoutEngine {
   final Duration restDuration;
   final double threshold;
   final DateTime Function() _clock;
+
+  /// Confirms each rep really was the selected exercise (optional).
+  final RepValidator? validator;
+
+  /// Down->up faster than this is treated as model jitter and ignored.
+  final Duration minRepDuration;
 
   WorkoutPhase _phase = WorkoutPhase.countdown;
   MoveStage _stage;
@@ -101,6 +114,10 @@ class WorkoutEngine {
   int _correct = 0;
   int _wrong = 0;
   int _setWrong = 0;
+  int _ignored = 0;
+  DateTime? _downSince;
+  String? _notice;
+  DateTime? _noticeUntil;
   DateTime? _pausedAt;
   final List<SetResult> _sets = [];
   FormResult _lastForm = const FormResult.correct();
@@ -137,6 +154,7 @@ class WorkoutEngine {
     _restStartedAt = move(_restStartedAt);
     _pausedAt = null;
     _prevStage = null; // don't count a rep from a pose held during the pause
+    _downSince = null;
   }
 
   /// Ends the rest early and starts the next set.
@@ -144,6 +162,7 @@ class WorkoutEngine {
     if (_phase != WorkoutPhase.rest || isPaused) return;
     _phase = WorkoutPhase.active;
     _prevStage = null;
+    _downSince = null;
   }
 
   void start() {
@@ -190,18 +209,31 @@ class WorkoutEngine {
 
     final confident = upDownProbs.reduce(math.max) > threshold;
     if (confident) {
+      final now = _clock();
+      if (_stage == MoveStage.down && _prevStage != MoveStage.down) {
+        // A new repetition starts.
+        validator?.reset();
+        _downSince = now;
+      }
       if (_prevStage == MoveStage.down && _stage == MoveStage.up) {
-        if (form.isCorrect) {
+        final tooFast = _downSince != null && now.difference(_downSince!) < minRepDuration;
+        final check = validator?.validate() ?? const RepCheck.valid();
+        if (tooFast) {
+          // model flicker — ignore
+        } else if (!check.counts) {
+          _ignored++;
+          _showNotice(check.message ?? 'That doesn\'t look like this exercise', now);
+        } else if (form.isCorrect && check.isCorrect) {
           _reps++;
           _correct++;
         } else {
           _wrong++;
           _setWrong++;
+          if (!check.isCorrect) _showNotice(check.message ?? 'Check your form', now);
         }
       }
       _prevStage = _stage;
     }
-
     // Set finishes once the target is reached and the user returns down.
     if (_reps >= targetReps && _stage == MoveStage.down) {
       _sets.add(SetResult(_reps, _setWrong));
@@ -219,8 +251,14 @@ class WorkoutEngine {
     return state;
   }
 
+  void _showNotice(String message, DateTime now) {
+    _notice = message;
+    _noticeUntil = now.add(const Duration(milliseconds: 2500));
+  }
+
   WorkoutState get state {
     final now = _now;
+    final notice = _noticeUntil != null && now.isBefore(_noticeUntil!) ? _notice : null;
     int remaining(Duration total, DateTime since) =>
         math.max(0, ((total - now.difference(since)).inMilliseconds / 1000).ceil());
 
@@ -239,11 +277,12 @@ class WorkoutEngine {
       totalSets: totalSets,
       correctReps: _correct,
       wrongReps: _wrong,
-      formOk: _lastForm.isCorrect,
-      feedback: _lastForm.feedback,
+      formOk: notice == null && _lastForm.isCorrect,
+      feedback: notice ?? _lastForm.feedback,
       secondsLeft: secondsLeft,
       elapsed: elapsed,
       isPaused: isPaused,
+      ignoredReps: _ignored,
     );
   }
 }
@@ -264,6 +303,7 @@ class PoseWorkoutPipeline {
     if (frame == null || engine.phase != WorkoutPhase.active) return engine.tick();
     final features = extractFeatures(frame);
     final probs = upDownModel.predict(features);
+    engine.validator?.observe(frame);
     final form = formAnalyzer.analyze(frame, engine.stageFor(probs), features);
     return engine.onPrediction(probs, form);
   }
