@@ -18,15 +18,48 @@ class PosePoint {
 /// Google ML Kit's `PoseLandmarkType.values` uses exactly the same order, so
 /// the models trained with MediaPipe in the original project work unchanged.
 class PoseFrame {
-  PoseFrame(this.points)
+  PoseFrame(this.points, {this.aspect = 1.0})
       : assert(points.length == landmarkCount,
-            'Expected $landmarkCount landmarks, got ${points.length}');
+  'Expected $landmarkCount landmarks, got ${points.length}');
 
   static const int landmarkCount = 33;
 
   final List<PosePoint> points;
 
+  /// Image width / height. x and y are normalised separately, so angles are
+  /// computed after scaling x by this to get square (undistorted) units.
+  final double aspect;
+
   PosePoint operator [](int index) => points[index];
+
+  bool visible(Iterable<int> indices, [double minLikelihood = 0.5]) =>
+      indices.every((i) => points[i].likelihood >= minLikelihood);
+
+  double _visibility(Iterable<int> indices) => indices.fold(0.0, (s, i) => s + points[i].likelihood);
+
+  /// Returns [left] or [right], whichever set of joints is more visible.
+  List<int> betterSide(List<int> left, List<int> right) =>
+      _visibility(left) >= _visibility(right) ? left : right;
+
+  /// Angle at joint [b] (degrees, 0..180) in undistorted image space.
+  double jointAngle(int a, int b, int c) {
+    PosePoint iso(int i) => PosePoint(points[i].x * aspect, points[i].y);
+    return angleBetween(iso(a), iso(b), iso(c));
+  }
+
+  PosePoint _mid(int a, int b) =>
+      PosePoint((points[a].x + points[b].x) / 2, (points[a].y + points[b].y) / 2);
+
+  PosePoint get midShoulder => _mid(Landmark.leftShoulder, Landmark.rightShoulder);
+  PosePoint get midHip => _mid(Landmark.leftHip, Landmark.rightHip);
+
+  /// Torso angle from vertical in degrees: 0 = upright, 90 = horizontal.
+  double get torsoTilt {
+    final s = midShoulder, h = midHip;
+    final dx = ((s.x - h.x) * aspect).abs();
+    final dy = h.y - s.y; // positive when shoulders are above hips
+    return math.atan2(dx, dy) * 180 / math.pi;
+  }
 }
 
 /// MediaPipe / ML Kit landmark indices used by the form analysers.

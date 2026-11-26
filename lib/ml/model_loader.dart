@@ -6,6 +6,7 @@ import '../models/exercise.dart';
 import 'form_analyzers.dart';
 import 'pose_classifier.dart';
 import 'workout_engine.dart';
+import 'rep_validator.dart';
 
 /// Loads model weights from assets (cached) and builds a ready-to-use pipeline.
 class ModelLoader {
@@ -39,6 +40,12 @@ class ModelLoader {
         targetReps: level.repsPerSet,
         totalSets: Level.setsPerWorkout,
         initialStage: exercise.initialStage,
+        minRepDuration: const Duration(milliseconds: 300),
+        validator: switch (exercise.kind) {
+          ExerciseKind.squat => SquatRepValidator(),
+          ExerciseKind.pushup => PushupRepValidator(),
+          ExerciseKind.curl => CurlRepValidator(),
+        },
       ),
     );
   }
